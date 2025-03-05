@@ -11,92 +11,65 @@ Node.js (v16 or later): Install Node.js
 npm or yarn: npm is installed automatically with Node.js.
 Installation
 Clone the repository:
-bash
-Copy
-git clone https://github.com/your-username/FundUnity-CMS.git
-cd FundUnity-CMS
+
+
+"git clone https://github.com/your-username/FundUnity-CMS.git"
+"cd FundUnity-CMS"
+
 Install dependencies:
 If you’re using npm:
 
-bash
-Copy
-npm install
+"npm install"
 Or, if you prefer yarn:
 
-bash
-Copy
-yarn install
+"yarn install"
 Running the Development Server
 To start the development server with Hot Module Replacement (HMR):
 
-bash
-Copy
-npm run dev
+"npm run dev"
 Or with yarn:
 
-bash
-Copy
-yarn dev
+"yarn dev"
 This will start the Vite development server at http://localhost:3000 (default). Open this URL in your browser to view the app.
 
 Build for Production
 To build the application for production:
 
-bash
-Copy
-npm run build
+"npm run build"
 Or with yarn:
 
-bash
-Copy
-yarn build
+"yarn build"
 This will create an optimized production build in the dist folder.
 
 Run Production Build Locally
 To preview the production build locally:
 
-bash
-Copy
-npm run preview
+"npm run preview"
 Or with yarn:
 
-bash
-Copy
-yarn preview
+"yarn preview"
 This will serve the built application on a local server (typically http://localhost:5000).
 
 Linting and Formatting
 This project comes with ESLint and Prettier setup for code quality. To lint the project:
 
-bash
-Copy
-npm run lint
+"npm run lint"
 Or with yarn:
 
-bash
-Copy
-yarn lint
+"yarn lint"
 You can fix some linting issues automatically by running:
 
-bash
-Copy
-npm run lint -- --fix
+"npm run lint -- --fix"
 Or with yarn:
 
-bash
-Copy
-yarn lint --fix
+"yarn lint --fix"
 Type Checking
 To ensure that the TypeScript types are correct, you can run:
 
-bash
-Copy
-npm run type-check
+"npm run type-check"
 Or with yarn:
 
-bash
-Copy
-yarn type-check
+"yarn type-check"
 Available Scripts
 Here’s a list of useful commands in this project:
 
