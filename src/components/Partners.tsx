@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios, { AxiosResponse } from "axios";
 import Header from "../layout/Header";
 
-const AboutUs = () => {
+const Partners = () => {
   const [data, setData] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
@@ -16,7 +16,7 @@ const AboutUs = () => {
   const token = localStorage.getItem('authToken');
   
   // API URL
-  const apiUrl = "https://backend-donatebank.vercel.app/v1/content/aboutus";
+  const apiUrl = "https://backend-donatebank.vercel.app/v1/content/ourpartners";
   
   // Fetch data dari API
   useEffect(() => {
@@ -52,17 +52,11 @@ const AboutUs = () => {
     setIsModalOpen(true);
   };
 
-    //closemodal
-    const ModalClose = () => {
-      setIsModalOpen(false);
-      setCurrentItem(null); // Reset data saat modal ditutup
-  };
-
-  // Handle Add New AbouUs - open modal with empty fields
+  // Handle Add New Program - open modal with empty fields
   const handleAddNewClick = () => {
     setCurrentItem({
       id: null,
-      nama: "",
+      name: "",
       description: "",
       imageUrl: "",
     });
@@ -73,14 +67,14 @@ const AboutUs = () => {
   const handleSave = async () => {
     if (currentItem) {
       // Validasi field yang diperlukan
-      if (!currentItem.nama) {
-        alert("Title is required.");
+      if (!currentItem.name) {
+        alert("Name is required.");
         return;
       }
   
       try {
         const formData = new FormData();
-        formData.append("nama", currentItem.nama);
+        formData.append("name", currentItem.name);
         formData.append("description", currentItem.description || "");
         
         // Handle file upload
@@ -113,12 +107,12 @@ const AboutUs = () => {
         setCurrentItem(null);
       } catch (error) {
         console.error("Error saving program:", error);
-        alert("An error occurred while saving the program.");
+        alert("An error occurred while saving the partners.");
       }
     }
   };
 
-  // Handle change - update nama, description
+  // Handle change - update name, description
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (currentItem) {
       setCurrentItem({
@@ -145,7 +139,7 @@ const AboutUs = () => {
 
   // Handle delete - remove item from database and local state
   const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this program?")) {
+    if (window.confirm("Are you sure you want to delete this partner?")) {
       try {
         // Include token in the delete request
         await axios.delete(`${apiUrl}/${id}`, {
@@ -157,11 +151,17 @@ const AboutUs = () => {
         // Update local state after successful deletion
         setData(prevData => prevData.filter(item => item.id !== id));
       } catch (error) {
-        console.error("Error deleting program:", error);
-        alert("Failed to delete program. Please try again.");
+        console.error("Error deleting partner:", error);
+        alert("Failed to delete partner. Please try again.");
       }
     }
   };
+
+  //closemodal
+  const ModalClose = () => {
+    setIsModalOpen(false);
+    setCurrentItem(null); // Reset data saat modal ditutup
+};
 
   // Handle search query
   const handleSearch = () => {
@@ -184,7 +184,7 @@ const AboutUs = () => {
       // Filter locally
       const filtered = data.filter(
         (item) =>
-          (item.nama && item.nama.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (item.name && item.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
           (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
       );
       setData(filtered);
@@ -225,95 +225,86 @@ const AboutUs = () => {
     <div className="bg-gradient-to-br from-blue-50 to-white min-h-screen">
       <Header />
       <div className="p-6 flex flex-col overflow-hidden max-w-8xl mx-auto">
-  {/* Pembatas "About Us" */}
-  <div className="bg-white rounded-xl shadow-lg p-6 border border-blue-100 mb-6">
-    <div className="flex justify-between items-center mb-6">
-      <div>
-        <h2 className="text-2xl font-bold text-blue-700">About Us</h2>
-        <p className="text-blue-500 text-sm">Manage your aboutus collection</p>
-      
-    </div>
-  </div>
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-blue-100">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-blue-700">Partners</h2>
+              <p className="text-blue-500 text-sm">Manage your partners collection</p>
+            </div>
+            <button
+              onClick={handleAddNewClick}
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 shadow-md transition-colors duration-150 flex items-center"
+              disabled={loading}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add New Image
+            </button>
+          </div>
 
-  {/* Error Message */}
-  {error && (
-    <div className="mb-6 p-4 bg-red-50 text-red-700 border-l-4 border-red-500 rounded-md flex items-start">
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <span>{error}</span>
-    </div>
-  )}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 text-red-700 border-l-4 border-red-500 rounded-md flex items-start">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
 
-  {/* Search and Add New Image buttons on the same row */}
-  <div className="flex justify-between items-center mb-6">
-    {/* Search Bar */}
-    <div className="flex items-center space-x-2 bg-blue-50 p-2 rounded-lg w-2/5">
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-      <input
-        type="text"
-        className="bg-transparent border-none focus:ring-0 text-blue-700 placeholder-blue-300 w-full text-sm"
-        placeholder="Search by nama or description..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-      />
-      <button
-        onClick={handleSearch}
-        className="text-blue-700 hover:text-blue-900 transition-colors duration-150"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-      </button>
-    </div>
+          <div className="mb-6 flex justify-between items-center">
+            <div className="flex items-center space-x-2 bg-blue-50 p-2 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                className="bg-transparent border-none focus:ring-0 text-blue-700 placeholder-blue-300 w-64 text-sm"
+                placeholder="Search by name.."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              />
+              <button
+                onClick={handleSearch}
+                className="text-blue-700 hover:text-blue-900 transition-colors duration-150"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </div>
+          </div>
 
-    {/* Add New Image Button */}
-    <button
-      onClick={handleAddNewClick}
-      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 shadow-md transition-colors duration-150 flex items-center"
-      disabled={loading}
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-      </svg>
-      Add New Image
-    </button>
-  </div>
-
-  {/* Loading or No Results */}
-  {loading ? (
-    <div className="text-center py-16 flex flex-col items-center">
-      <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-blue-600"></div>
-      <p className="mt-4 text-blue-600 font-medium">Loading your images...</p>
-    </div>
-  ) : currentItems.length === 0 ? (
-    <div className="text-center py-16 bg-blue-50 rounded-lg border border-blue-100">
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-blue-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-      <h3 className="text-xl font-semibold text-blue-700 mb-2">No Images Found</h3>
-      <p className="text-blue-500">
-        {searchQuery ? "Try a different search term or add new images." : "Start by adding your first image."}
-      </p>
-      <button
-        onClick={handleAddNewClick}
-        className="mt-6 px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 shadow-md transition-colors duration-150"
-      >
-        Add Your First Image
-      </button>
-    </div>
-  ) : (
+          {loading ? (
+            <div className="text-center py-16 flex flex-col items-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-blue-600"></div>
+              <p className="mt-4 text-blue-600 font-medium">Loading your images...</p>
+            </div>
+          ) : currentItems.length === 0 ? (
+            <div className="text-center py-16 bg-blue-50 rounded-lg border border-blue-100">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-blue-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <h3 className="text-xl font-semibold text-blue-700 mb-2">No Images Found</h3>
+              <p className="text-blue-500">
+                {searchQuery ? "Try a different search term or add new images." : "Start by adding your first image."}
+              </p>
+              <button
+                onClick={handleAddNewClick}
+                className="mt-6 px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 shadow-md transition-colors duration-150"
+              >
+                Add Your First Image
+              </button>
+            </div>
+          ) : (
             <div className="overflow-x-auto rounded-lg">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gradient-to-r from-blue-500 to-blue-900 text-white">
+                  <tr className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
                     <th className="py-3 px-6 text-left font-medium rounded-tl-lg">ID</th>
-                    <th className="py-3 px-6 text-left font-medium">Title</th>
-                    <th className="py-3 px-6 text-left font-medium">Description</th>
-                    <th className="py-3 px-6 text-left font-medium">Image</th>
+                    <th className="py-3 px-6 text-left font-medium">Name</th>
+                    <th className="py-3 px-6 text-left font-medium">Logo</th>
                     <th className="py-3 px-6 text-left font-medium rounded-tr-lg">Actions</th>
                   </tr>
                 </thead>
@@ -326,14 +317,13 @@ const AboutUs = () => {
                       } hover:bg-blue-100 transition-colors duration-150`}
                     >
                       <td className="py-4 px-6 border-b border-blue-100">{item.id}</td>
-                      <td className="py-4 px-6 border-b border-blue-100 font-medium text-blue-700">{item.nama}</td>
-                      <td className="py-4 px-6 border-b border-blue-100 truncate max-w-xs">{item.description}</td>
+                      <td className="py-4 px-6 border-b border-blue-100 font-medium text-blue-700">{item.name}</td>
                       <td className="py-4 px-6 border-b border-blue-100">
                         {item.imageUrl ? (
                           <div className="relative group">
                             <img 
                               src={item.imageUrl} 
-                              alt={item.nama} 
+                              alt={item.name} 
                               className="h-16 w-24 object-cover rounded-lg shadow-sm transition-transform duration-300 group-hover:scale-105"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
@@ -424,46 +414,33 @@ const AboutUs = () => {
 
       {/* Modal dengan styling yang ditingkatkan */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full animate-fade-in-up">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full animate-fade-in-up">
             <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-4 px-6 rounded-t-xl flex justify-between items-center">
-              <h2 className="text-xl font-bold">
-                {currentItem?.id ? 'Edit Image' : 'Add New Image'}
-              </h2>
-              <button 
-                onClick={ModalClose}
-                className="text-white hover:text-blue-100 transition-colors duration-150"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+                <h2 className="text-xl font-bold">
+                    {currentItem?.id ? 'Edit Image' : 'Add New Image'}
+                </h2>
+                <button 
+                    onClick={ModalClose} // Fungsi untuk menutup modal
+                    className="text-white hover:text-blue-100 transition-colors duration-150"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
             <div className="p-6">
-              <div className="mb-4">
+            <div className="mb-4">
                 <label className="block mb-2 text-sm font-medium text-blue-700">
-                  Title
+                  Name
                 </label>
                 <input
                   type="text"
-                  name="nama"
-                  value={currentItem?.nama || ""}
+                  name="name"
+                  value={currentItem?.name|| ""}
                   onChange={handleChange}
                   className="w-full p-3 bg-blue-50 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-150"
-                  placeholder="Enter image nama"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-sm font-medium text-blue-700">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={currentItem?.description || ""}
-                  onChange={handleChange}
-                  rows={4}
-                  className="w-full p-3 bg-blue-50 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-150"
-                  placeholder="Enter image description"
+                  placeholder="Enter image name"
                 />
               </div>
               <div className="mb-6">
@@ -506,25 +483,26 @@ const AboutUs = () => {
                   </div>
                 </div>
               )}
-
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={ModalClose}
-                  className="px-5 py-2 border border-blue-200 text-blue-600 bg-white rounded-lg hover:bg-blue-50 transition-colors duration-150"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="px-5 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 shadow-md transition-colors duration-150"
-                >
-                  Save Image
-                </button>
-              </div>
+                
+                {/* Tombol Cancel */}
+                <div className="flex justify-end space-x-3">
+                    <button
+                        onClick={ModalClose} // Menutup modal
+                        className="px-5 py-2 border border-blue-200 text-blue-600 bg-white rounded-lg hover:bg-blue-50 transition-colors duration-150"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        className="px-5 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 shadow-md transition-colors duration-150"
+                    >
+                        Save Image
+                    </button>
+                </div>
             </div>
-          </div>
         </div>
-      )}
+    </div>
+)}
 
       <style>{`
         @keyframes fade-in-up {
@@ -545,4 +523,4 @@ const AboutUs = () => {
   );
 };
 
-export default AboutUs;
+export default Partners;

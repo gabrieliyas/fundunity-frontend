@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Using useNavigate for navigation
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const Logout = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const navigate = useNavigate(); // Using useNavigate for navigation
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   // Open logout confirmation modal
   const handleLogoutClick = () => {
@@ -17,11 +19,9 @@ const Logout = () => {
 
   // Confirm logout
   const handleConfirmLogout = () => {
-    // Clear authentication data (for example, using localStorage)
-    localStorage.clear();
-    // Navigate to login page after logout
-    navigate("/login");
-    setIsModalOpen(false);
+    logout(); // Call logout to clear token and update authentication state
+    navigate("/login"); // Redirect to login page
+    setIsModalOpen(false); // Close the modal
   };
 
   return (

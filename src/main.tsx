@@ -1,29 +1,62 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { 
+  BrowserRouter as Router, 
+  Routes, 
+  Route, 
+  Navigate, 
+  useNavigate, 
+  useLocation 
+} from 'react-router-dom';
+
+// Components
 import Home from './components/Home';
 import AboutUs from './components/AboutUs';
+import ErrorBoundary from './utils/ErrorBoundary';
 import Programs from './components/Programs';
 import Transaksi from './components/Transaksi';
+import Partners from './components/Partners';
 import Settings from './components/Settings';
 import Sidebar from './layout/Sidebar';
 import Login from './components/Login';
 import Logout from './components/Logout';
 
-const App = () => {
+// Context
+import { AuthProvider } from './contexts/AuthContext';
+import axios from "axios";
+import ImageSlider from './components/ImageSlider';
+
+axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+axios.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("token")}`;
+
+
+// Protected Route Component
+const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = !!localStorage.getItem('authToken');
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    // Redirect to login if not authenticated
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return <>{children}</>;
+};
+
+const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
-  // Fungsi untuk toggle sidebar
+  // Toggle sidebar function
   const toggleSidebar = () => {
     setIsSidebarOpen(prevState => !prevState);
   };
   
+  // Check authentication on route change
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("authToken");
-    // Jika pengguna belum login, arahkan ke halaman login
+    // If user isn't logged in and trying to access protected route, redirect to login
     if (!isLoggedIn && location.pathname !== "/login" && location.pathname !== "/logout") {
       navigate("/login");
     }
@@ -34,7 +67,7 @@ const App = () => {
   
   return (
     <div className="app-container flex">
-      {/* Sidebar hanya tampil jika bukan di halaman login dan logout */}
+      {/* Show sidebar only if not on login/logout pages */}
       {shouldShowSidebar && (
         <Sidebar 
           isSidebarOpen={isSidebarOpen}
@@ -47,31 +80,82 @@ const App = () => {
         className="main-content transition-all duration-300 ease-in-out"
         style={{
           marginLeft: shouldShowSidebar ? (isSidebarOpen ? "250px" : "80px") : "0px",
-          width: shouldShowSidebar 
-            ? `calc(100% - ${isSidebarOpen ? "250px" : "80px"})` 
+          width: shouldShowSidebar
+            ? `calc(100% - ${isSidebarOpen ? "250px" : "80px"})`
             : "100%",
         }}
       >
         <Routes>
-          <Route path="/home" element={<Home />} />
-          <Route path="/aboutus" element={<AboutUs />} />
-          <Route path="/programs" element={<Programs />} />
-          <Route path="/transaksi" element={<Transaksi />} />
-          <Route path="/settings" element={<Settings />} />
+          {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/logout" element={<Logout />} />
+          
+          {/* Protected Routes */}
+          <Route path="/home" element={
+            <PrivateRoute>
+              <Home />
+            </PrivateRoute>
+          } />
+          
+          <Route path="/aboutus" element={
+            <PrivateRoute>
+              <ErrorBoundary>
+              <AboutUs />
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+           
+          <Route path="/imageslider" element={
+            <PrivateRoute>
+              <ImageSlider />
+            </PrivateRoute>
+          } />
+          
+          <Route path="/programs" element={
+            <PrivateRoute>
+             <ErrorBoundary>
+              <Programs />
+              </ErrorBoundary>
+            </PrivateRoute>
+          } />
+
+        <Route path="/partners" element={
+            <PrivateRoute>
+              <Partners />
+            </PrivateRoute>
+          } />
+
+          <Route path="/transaksi" element={
+            <PrivateRoute>
+              <Transaksi />
+            </PrivateRoute>
+          } />
+          <Route path="/settings" element={
+            <PrivateRoute>
+              <Settings />
+            </PrivateRoute>
+          } />
+          
+          {/* Default redirect */}
+          <Route path="/" element={<Navigate to="/home" replace />} />
         </Routes>
       </div>
     </div>
   );
 };
 
-// Render aplikasi
+const App = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
+  );
+};
+
+// Root render
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
-root.render(
-  <Router>
-    <App />
-  </Router>
-);
+root.render(<App />);
 
 export default App;

@@ -1,58 +1,79 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import ReCAPTCHA from "react-google-recaptcha";
+import { useAuth } from "../contexts/AuthContext";
 import logoCMS from "../assets/images/logoCMS.jpg";
-import login1 from "../assets/images/login1.jpg"
+import login1 from "../assets/images/login1.jpg";
+import ReCAPTCHA from "react-google-recaptcha";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [captchaValidated, setCaptchaValidated] = useState(false);
+  const { login, error: authError, loading: authLoading, isAuthenticated, clearError } = useAuth();
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [recaptchaToken, setRecaptchaToken] = useState("");
 
+  // Redirect jika sudah login
   useEffect(() => {
-    console.log("Google reCAPTCHA Loaded!");
-  }, []);
+    if (isAuthenticated) {
+      navigate("/home", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  // Sinkronisasi error dari context
+  useEffect(() => {
+    if (authError && error !== authError) {
+      setError(authError);
+    }
+  }, [authError, error]);
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!captchaValidated) {
-      alert("Please complete the reCAPTCHA verification!");
+
+    if (error) clearError(); // Hanya bersihkan error jika ada sebelumnya
+    setError(""); // Reset error lokal
+
+    if (!recaptchaToken) {
+      setError("Please verify that you are not a robot.");
       return;
     }
 
-    // Cek autentikasi login (ganti dengan logika autentikasi yang sesungguhnya)
-    if (email === "user@example.com" && password === "password123") {
-      // Simpan token setelah login sukses
-      localStorage.setItem("authToken", "valid-token");
-      // Arahkan ke halaman home setelah login sukses
-      navigate("/home");
-    } else {
-      alert("Invalid credentials");
+    try {
+      // Integrasikan recaptchaToken pada login
+      await login(email, password, recaptchaToken); // Now supports 3 arguments
+      // Redirect akan dilakukan oleh useEffect di atas
+    } catch (err) {
+      console.error("Login attempt failed", err);
     }
-  };
-
-  const onCaptchaChange = (value: string | null) => {
-    console.log("Captcha value:", value);
-    setCaptchaValidated(true);
   };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-[#f0f8ff]">
       <div className="flex w-full max-w-4xl bg-white shadow-lg rounded-lg">
+        
         {/* Left Side Image */}
-        <div className="hidden md:block w-1/2 bg-[#fffbfb] flex justify-center items-center p-3 pt-24">
-          <img src={login1} alt="Illustration" className="w-4/9 h-auto" />
+        <div className="hidden md:flex w-1/2 bg-[#fffbfb] justify-center items-center p-3 pt-24">
+          <img src={login1} alt="Illustration" className="w-4/5 h-auto" />
         </div>
-
+        
         {/* Right Side Form */}
         <div className="w-full md:w-1/2 p-12 bg-[#f4f8fb] rounded-r-lg">
           <div className="flex justify-center mb-2">
             <img src={logoCMS} alt="Logo" className="w-28 h-auto" />
           </div>
-          <h2 className="text-center text-xl font-semibold text-[#333] mb-8">Please enter your details</h2>
+          <h2 className="text-center text-xl font-semibold text-[#333] mb-8">
+            Please enter your details
+          </h2>
           
           <form onSubmit={handleLogin}>
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-center">
+                {error}
+              </div>
+            )}
+            
             {/* Email Field */}
             <div className="mb-4">
               <label className="block text-sm text-[#333] mb-2">Email</label>
@@ -65,7 +86,7 @@ const Login = () => {
                 required
               />
             </div>
-
+            
             {/* Password Field */}
             <div className="mb-6">
               <label className="block text-sm text-[#333] mb-2">Password</label>
@@ -79,25 +100,33 @@ const Login = () => {
               />
             </div>
 
-            {/* Google reCAPTCHA */}
-            <div className="mb-6">
+            {/* ReCAPTCHA */}
+            <div className="mb-4">
               <ReCAPTCHA
-                sitekey="6Le2e-AqAAAAANlTBnA6oJFe6vl-AHlkh1LsZvf2"
-                onChange={onCaptchaChange}
+                sitekey="6LdS5PkqAAAAAHZZeU73vxO99m-sKKQYDfZjSVGN" // Ganti dengan site key Anda
+                onChange={(token) => setRecaptchaToken(token || "")}
               />
             </div>
-
+            
             {/* Forgot Password Link */}
             <div className="flex justify-between items-center mb-6">
-              <a href="#" className="text-sm text-[#007bff] hover:text-[#0056b3]">Forgot Password?</a>
+              <a
+                href="#"
+                className="text-sm text-[#007bff] hover:text-[#0056b3]"
+              >
+                Forgot Password?
+              </a>
             </div>
-
+            
             {/* Login Button */}
             <button
               type="submit"
-              className="w-full py-3 bg-[#007bff] text-white rounded-lg font-semibold hover:bg-[#0056b3] transition duration-300"
+              disabled={authLoading}
+              className={`w-full py-3 bg-[#007bff] text-white rounded-lg font-semibold hover:bg-[#0056b3] transition duration-300 ${
+                authLoading ? "opacity-70 cursor-not-allowed" : ""
+              }`}
             >
-              Login
+              {authLoading ? "Loading..." : "Login"}
             </button>
           </form>
         </div>

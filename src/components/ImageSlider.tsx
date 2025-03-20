@@ -1,225 +1,323 @@
-import React, { useState, useEffect } from "react";
-import axios, { AxiosResponse } from "axios";
+import React, { useState, useEffect } from 'react';
 import Header from "../layout/Header";
+import axios from 'axios';
+import { data } from 'react-router-dom';
 
-const Program = () => {
-  const [data, setData] = useState<any[]>([]);
+
+const ImageSlider = () => {
+  const [allData, setAllData] = useState<any[]>([]); // Original data from API
+  const [filteredData, setFilteredData] = useState<any[]>([]); // Filtered data for display
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage, setItemsPerPage] = useState<number>(5);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(5); // Pagination
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Ambil token dari localStorage
+  // Retrieve token from localStorage
   const token = localStorage.getItem('authToken');
-  
-  // API URL
-  const apiUrl = "https://backend-donatebank.vercel.app/v1/content/programs";
-  
-  // Fetch data dari API
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const response = await axios.get(apiUrl);
-        console.log("API Response:", response.data);
-        
-        // Handle berbagai format response yang mungkin
-        if (response.data && Array.isArray(response.data)) {
-          setData(response.data);
-        } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
-          setData(response.data.data);
-        } else {
-          console.error("Unexpected data format:", response.data);
-          setError("Invalid data format received from API");
-        }
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Failed to load data. Please check API connection.");
-      } finally {
-        setLoading(false);
-      }
+  const apiUrl = "https://backend-donatebank.vercel.app/v1/content/imageslider"; 
+
+  // Logger function for better debugging
+  const logger = (type: 'info' | 'error' | 'warning', message: string, data?: any) => {
+    const styles = {
+      info: 'background: #4299e1; color: white; padding: 2px 5px; border-radius: 3px;',
+      error: 'background: #f56565; color: white; padding: 2px 5px; border-radius: 3px;',
+      warning: 'background: #ecc94b; color: black; padding: 2px 5px; border-radius: 3px;'
     };
     
-    fetchData();
-  }, []);
+    if (data) {
+      console.log(`%c${type.toUpperCase()}`, styles[type], message, data);
+    } else {
+      console.log(`%c${type.toUpperCase()}`, styles[type], message);
+    }
+  };
 
-  // Handle Edit click - open modal
+  // Fetch data from API when the component mounts
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      if (!token) {
+        setError("Authentication token not found");
+        logger('error', "Authentication token not found");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        logger('info', "Fetching data from API", apiUrl);
+        
+        const response = await axios.get(apiUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        logger('info', "API Response received", response.data);
+        
+        // Log the first item from the response to inspect structure
+        if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+          logger('info', "First item in API response:", response.data[0]);
+        } else if (response.data && response.data.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
+          logger('info', "First item in API response:", response.data.data[0]);
+        }
+
+        if (response.data && Array.isArray(response.data)) {
+          setAllData(response.data);
+          setFilteredData(response.data);
+          logger('info', "Data set successfully (array format)", response.data.length);
+        } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+          setAllData(response.data.data);
+          setFilteredData(response.data.data);
+          logger('info', "Data set successfully (nested data format)", response.data.data.length);
+        } else {
+          setError("Unexpected data format received");
+          logger('error', "Unexpected data format received", response.data);
+        }
+      } catch (err) {
+        if (axios.isAxiosError(err)) {
+          const errorMessage = err.response?.data?.message || err.message;
+          setError(`Error: ${errorMessage}`);
+          logger('error', "Axios error fetching data", {
+            status: err.response?.status,
+            message: errorMessage,
+            data: err.response?.data
+          });
+        } else {
+          setError("An unknown error occurred");
+          logger('error', "Unknown error fetching data", err);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [token]);
+
+  // Handle Edit - opens modal with existing item data
   const handleEditClick = (item: any) => {
-    setCurrentItem({...item});
+    logger('info', "Edit clicked for item", item);
+    setCurrentItem(item);
     setIsModalOpen(true);
   };
 
-  // Handle Add New Program - open modal with empty fields
+  // Handle Add New - opens modal with empty fields for new image
   const handleAddNewClick = () => {
+    logger('info', "Add new image clicked");
     setCurrentItem({
-      id: null,
-      title: "",
-      description: "",
-      imageUrl: "",
+      id: null, // No ID for new item
+      title: '',
+      description: '',
+      imageUrl: '', // Using imageUrl field name consistently
     });
     setIsModalOpen(true);
   };
 
-  // Handle save - add or update
+  // Close the modal without saving changes
+  const handleModalClose = () => {
+    logger('info', "Modal closed");
+    setIsModalOpen(false);
+    setCurrentItem(null);
+  };
+
+  // Handle Save - Add new or update existing image data
   const handleSave = async () => {
-    if (currentItem) {
-      // Validasi field yang diperlukan
-      if (!currentItem.title) {
-        alert("Title is required.");
-        return;
+    if (!currentItem) {
+      logger('warning', "Save attempted with no current item");
+      return;
+    }
+    
+    logger('info', "Saving item", currentItem);
+    
+    try {
+      const formData = new FormData();
+      formData.append('title', currentItem.title);
+      formData.append('description', currentItem.description);
+
+      // If an image is uploaded, append it to the FormData
+      if (currentItem.imageUrl instanceof File) {
+        formData.append('imageUrl', currentItem.imageUrl);
+        logger('info', "File appended to form data", currentItem.imageUrl.name);
+      } else if (typeof currentItem.imageUrl === 'string' && currentItem.imageUrl.trim() !== '') {
+        // Only append if it's a non-empty string
+        formData.append('imageUrl', currentItem.imageUrl);
+        logger('info', "Image URL appended to form data", 
+          currentItem.imageUrl.substring(0, 30) + (currentItem.imageUrl.length > 30 ? '...' : ''));
       }
-  
-      try {
-        const formData = new FormData();
-        formData.append("title", currentItem.title);
-        formData.append("description", currentItem.description || "");
+
+      // Log form data entries
+      formData.forEach((value, key) => {
+        logger('info', `FormData entry: ${key}`, typeof value === 'string' ? (value.length > 30 ? value.substring(0, 30) + '...' : value) : '[File or other data]');
+      });
+
+      if (currentItem.id) {
+        // Update existing image (PUT request)
+        logger('info', `Updating item with ID: ${currentItem.id}`);
         
-        // Handle file upload
-        if (currentItem.imageFile instanceof File) {
-          formData.append("image", currentItem.imageFile);
-        }
-  
-        // Headers dengan token auth
-        const headers = {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        };
-  
-        let response: AxiosResponse<any, any>;
-        if (currentItem.id) {
-          // Update existing program
-          response = await axios.put(`${apiUrl}/${currentItem.id}`, formData, { headers });
-          // Update local state with response data
-          setData(prevData => 
-            prevData.map(item => item.id === currentItem.id ? response.data : item)
-          );
-        } else {
-          // Add new program
-          response = await axios.post(apiUrl, formData, { headers });
-          // Add new data from response to state
-          setData(prevData => [...prevData, response.data]);
-        }
-  
-        setIsModalOpen(false);
-        setCurrentItem(null);
-      } catch (error) {
-        console.error("Error saving program:", error);
-        alert("An error occurred while saving the program.");
-      }
-    }
-  };
-
-  // Handle change - update title, description
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    if (currentItem) {
-      setCurrentItem({
-        ...currentItem,
-        [e.target.name]: e.target.value,
-      });
-    }
-  };
-
-    //closemodal
-    const ModalClose = () => {
-      setIsModalOpen(false);
-      setCurrentItem(null); // Reset data saat modal ditutup
-  };
-
-  // Handle file upload
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      
-      // Store the file object for form upload
-      setCurrentItem({
-        ...currentItem,
-        imageFile: file,
-        // Create a preview URL
-        imageUrl: URL.createObjectURL(file)
-      });
-    }
-  };
-
-  // Handle delete - remove item from database and local state
-  const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this program?")) {
-      try {
-        // Include token in the delete request
-        await axios.delete(`${apiUrl}/${id}`, {
-          headers: {
-            "Authorization": `Bearer ${token}`
+        const response = await axios.put(
+          `${apiUrl}/${currentItem.id}`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data',
+            },
           }
+        );
+        
+        logger('info', "Update successful", response.data);
+        
+        // Update both state arrays
+        const updatedItem = response.data;
+        setAllData(prevData =>
+          prevData.map(item => item.id === currentItem.id ? updatedItem : item)
+        );
+        setFilteredData(prevData =>
+          prevData.map(item => item.id === currentItem.id ? updatedItem : item)
+        );
+      } else {
+        // Add new image (POST request)
+        logger('info', "Adding new item");
+        
+        const response = await axios.post(apiUrl, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
         });
         
-        // Update local state after successful deletion
-        setData(prevData => prevData.filter(item => item.id !== id));
-      } catch (error) {
-        console.error("Error deleting program:", error);
-        alert("Failed to delete program. Please try again.");
+        logger('info', "Add successful", response.data);
+        
+        // Add the new item to both state arrays
+        const newItem = response.data;
+        setAllData(prevData => [...prevData, newItem]);
+        setFilteredData(prevData => [...prevData, newItem]);
+      }
+
+      handleModalClose(); // Close modal after save
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        logger('error', "Error saving image", {
+          status: error.response?.status,
+          message: error.response?.data?.message || error.message,
+          data: error.response?.data
+        });
+      } else {
+        logger('error', "Unknown error saving image", error);
       }
     }
   };
 
-  // Handle search query
-  const handleSearch = () => {
-    if (!searchQuery.trim()) {
-      // Fetch all data again if search is cleared
-      const fetchData = async () => {
-        try {
-          const response = await axios.get(apiUrl);
-          if (response.data && Array.isArray(response.data)) {
-            setData(response.data);
-          } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
-            setData(response.data.data);
-          }
-        } catch (err) {
-          console.error("Error fetching data:", err);
-        }
+  // Handle change (input fields for title, description)
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (currentItem) {
+      const updatedItem = {
+        ...currentItem,
+        [e.target.name]: e.target.value,
       };
-      fetchData();
-    } else {
-      // Filter locally
-      const filtered = data.filter(
-        (item) =>
-          (item.title && item.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-      setData(filtered);
+      setCurrentItem(updatedItem);
+      logger('info', `Field ${e.target.name} changed`, e.target.value);
     }
-    setCurrentPage(1); // Reset to first page
   };
 
-  // Get current page data
+   // Handle file upload
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        
+        // Store the file object for form upload
+        setCurrentItem({
+          ...currentItem,
+          imageFile: file,
+          // Create a preview URL
+          imageUrl: URL.createObjectURL(file)
+        });
+      }
+    };
+  // Handle delete - remove image item from database
+  const handleDelete = async (id: number) => {
+    logger('info', `Delete requested for item ID: ${id}`);
+    
+    if (window.confirm("Are you sure you want to delete this image?")) {
+      try {
+        logger('info', `Deleting item with ID: ${id}`);
+        
+        await axios.delete(`${apiUrl}/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        logger('info', `Delete successful for ID: ${id}`);
+        
+        // Update both state arrays
+        setAllData(prevData => prevData.filter(item => item.id !== id));
+        setFilteredData(prevData => prevData.filter(item => item.id !== id));
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          logger('error', `Error deleting item ID: ${id}`, {
+            status: error.response?.status,
+            message: error.response?.data?.message || error.message
+          });
+        } else {
+          logger('error', `Unknown error deleting item ID: ${id}`, error);
+        }
+      }
+    } else {
+      logger('info', `Delete cancelled for item ID: ${id}`);
+    }
+  };
+
+  // Handle search
+  const handleSearch = () => {
+    logger('info', `Search query: "${searchQuery}"`);
+    
+    if (searchQuery.trim() === "") {
+      setFilteredData(allData); // Show all data when search query is empty
+      logger('info', "Empty search - showing all data", allData.length);
+    } else {
+      const filtered = allData.filter(
+        (item) =>
+          item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredData(filtered);
+      logger('info', `Search results: ${filtered.length} items found`);
+    }
+    setCurrentPage(1); // Reset to first page after search
+  };
+
+  // Get current page data for pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
-  // Calculate total pages
-  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   // Handle pagination
   const handleNextPage = () => {
     if (currentPage < totalPages) {
-      setCurrentPage(prev => prev + 1);
+      setCurrentPage(prev => {
+        const newPage = prev + 1;
+        logger('info', `Pagination: moving to page ${newPage} of ${totalPages}`);
+        return newPage;
+      });
     }
   };
 
   const handlePrevPage = () => {
     if (currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
+      setCurrentPage(prev => {
+        const newPage = prev - 1;
+        logger('info', `Pagination: moving to page ${newPage} of ${totalPages}`);
+        return newPage;
+      });
     }
   };
-
-  function logger(arg0: string, arg1: string, imageUrl: any) {
-    throw new Error("Function not implemented.");
-  }
-
-  function handleModalClose(event: React.MouseEvent<HTMLButtonElement, MouseEvent>): void {
-    throw new Error("Function not implemented.");
-  }
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-white min-h-screen">
@@ -227,14 +325,12 @@ const Program = () => {
       <div className="p-6 flex flex-col overflow-hidden max-w-8xl mx-auto">
         <div className="bg-white rounded-xl shadow-lg p-6 border border-blue-100">
           <div className="flex justify-between items-center mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-blue-700">Programs</h2>
-              <p className="text-blue-500 text-sm">Manage your programs collection</p>
-            </div>
+              <h2 className="text-2xl font-bold text-blue-700">ImageSlider</h2>
+              <p className="text-blue-500 text-sm">Manage your image slider collection</p>
             <button
               onClick={handleAddNewClick}
               className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 shadow-md transition-colors duration-150 flex items-center"
-              disabled={loading}
+              disabled={isLoading}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -276,7 +372,7 @@ const Program = () => {
             </div>
           </div>
 
-          {loading ? (
+          {isLoading ? (
             <div className="text-center py-16 flex flex-col items-center">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-blue-600"></div>
               <p className="mt-4 text-blue-600 font-medium">Loading your images...</p>
@@ -423,7 +519,7 @@ const Program = () => {
                 {currentItem?.id ? 'Edit Image' : 'Add New Image'}
               </h2>
               <button 
-                onClick={ModalClose}
+                onClick={handleModalClose}
                 className="text-white hover:text-blue-100 transition-colors duration-150"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -501,7 +597,7 @@ const Program = () => {
 
               <div className="flex justify-end space-x-3">
                 <button
-                  onClick={ModalClose}
+                  onClick={handleModalClose}
                   className="px-5 py-2 border border-blue-200 text-blue-600 bg-white rounded-lg hover:bg-blue-50 transition-colors duration-150"
                 >
                   Cancel
@@ -537,4 +633,4 @@ const Program = () => {
   );
 };
 
-export default Program;
+export default ImageSlider;
